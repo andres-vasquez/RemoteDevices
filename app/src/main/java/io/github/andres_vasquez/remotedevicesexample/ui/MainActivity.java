@@ -53,6 +53,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         //Add click events
         writeNfcImageButton.setOnClickListener(this);
         readNfcImageButton.setOnClickListener(this);
+        bleOptionsButton.setOnClickListener(this);
 
         //Add long click event to support edit
         writeNfcImageButton.setOnLongClickListener(new View.OnLongClickListener() {

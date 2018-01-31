@@ -11,6 +11,7 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 
 import io.github.andres_vasquez.remotedevicesexample.R;
+import io.github.andres_vasquez.remotedevicesexample.utils.Constants;
 
 public class LogsActivity extends AppCompatActivity implements View.OnClickListener{
 
@@ -22,6 +23,8 @@ public class LogsActivity extends AppCompatActivity implements View.OnClickListe
     private ImageButton advertiseImageButton;
     private TextView logsTextView;
 
+    private String address;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -31,6 +34,10 @@ public class LogsActivity extends AppCompatActivity implements View.OnClickListe
         initUI();
         sendImageButton.setOnClickListener(this);
         advertiseImageButton.setOnClickListener(this);
+
+        if(getIntent().hasExtra(Constants.EXTRA_BLE)){
+            address = getIntent().getStringExtra(Constants.EXTRA_BLE);
+        }
     }
 
     private void initUI() {
