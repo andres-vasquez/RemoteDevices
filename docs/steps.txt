@@ -1,0 +1,351 @@
+********************************
+AndroidManifest.xml
+********************************
+
+<!-- Step 1: Adicionamos los permisos al Manifest -->
+<uses-permission android:name="android.permission.NFC" />
+<uses-feature android:name="android.hardware.nfc" android:required="true" />
+
+********************************
+res/xml/nfc_tech_list.xml
+********************************
+<!-- Step 2: Creamos la lista de NFC soportados -->
+<resources>
+    <tech-list>
+        <tech>android.nfc.tech.NdefFormatable</tech>
+        <tech>android.nfc.tech.MifareUltralight</tech>
+    </tech-list>
+
+    <tech-list>
+        <tech>android.nfc.tech.NfcA</tech>
+        <tech>android.nfc.tech.Ndef</tech>
+    </tech-list>
+
+    <tech-list>
+        <tech>android.nfc.tech.NfcB</tech>
+        <tech>android.nfc.tech.Ndef</tech>
+    </tech-list>
+</resources>
+
+********************************
+AndroidManifest.xml
+********************************
+ <!-- Step 3: Adicionamos la metadata de chips NFC soportados -->
+<meta-data
+    android:name="android.nfc.action.TECH_DISCOVERED"
+    android:resource="@xml/nfc_tech_list" />
+
+
+********************************
+controller/NFCManager.class
+********************************
+// Step 4: Creamos NFCManager con su constructor activity y el getter para adapter
+public class NFCManager {
+
+    private Activity mActivity;
+    private NfcAdapter mNfcAdapter;
+
+    /**
+     * Constructor del NFC Manager
+     * @param mActivity activity
+     */
+    public NFCManager(Activity mActivity) {
+        this.mActivity = mActivity;
+    }
+
+
+    /**
+     * Getter adapter
+     * @return nfc adapter
+     */
+    public NfcAdapter getmNfcAdapter() {
+        return mNfcAdapter;
+    }
+}
+
+ //Step 5: Creamos las exceptions custom
+/**
+ * Excepcion custom
+ */
+public static class NFCNotSupported extends Exception {
+
+    public NFCNotSupported() {
+        super();
+    }
+}
+
+/**
+ * Excepcion custom
+ */
+public static class NFCNotEnabled extends Exception {
+    public NFCNotEnabled() {
+        super();
+    }
+}
+
+ // Step 6: Verificamos el chip NFC
+/**
+ * Verifica que el chip NFC este activo y habilitado
+ * @throws NFCNotSupported Dispositivo que no tiene NFC
+ * @throws NFCNotEnabled NFC deshabilitado
+ */
+public void verifyNFC() throws NFCNotSupported, NFCNotEnabled {
+
+    mNfcAdapter = NfcAdapter.getDefaultAdapter(mActivity);
+
+    if (mNfcAdapter == null)
+        throw new NFCNotSupported();
+
+    if (!mNfcAdapter.isEnabled())
+        throw new NFCNotEnabled();
+
+}
+
+ // Step 7: Adicionamos el método que libera el chip
+/**
+ * Libera el adapter de escuchar los cambios
+ */
+public void disableDispatch() {
+    if (mNfcAdapter != null) {
+        mNfcAdapter.disableForegroundDispatch(mActivity);
+    }
+}
+
+
+// Step 8: Creamos el mensaje de texto a enviar en formato NdefMessage
+/**
+ * Creamos el mensaje
+ * @param content Contenido
+ * @return mensaje en formato de NdefMessage
+ */
+public NdefMessage createTextMessage(String content) {
+    try {
+
+        byte[] lang = Locale.getDefault().getLanguage().getBytes("UTF-8");
+        byte[] text = content.getBytes("UTF-8");
+
+        int langSize = lang.length;
+        int textLength = text.length;
+
+        ByteArrayOutputStream payload = new ByteArrayOutputStream(1 + langSize + textLength);
+        payload.write((byte) (langSize & 0x1F));
+        //payload.write(lang, 0, langSize);
+        payload.write(text, 0, textLength);
+        NdefRecord record = new NdefRecord(NdefRecord.TNF_WELL_KNOWN, NdefRecord.RTD_TEXT, new byte[0], payload.toByteArray());
+        return new NdefMessage(new NdefRecord[]{record});
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+
+    return null;
+}
+
+
+ // Step 9: Agregamos el método de escritura de datos
+/**
+ * Funcion para escribir un Tag
+ * @param tag Tag NFC
+ * @param message Mensaje a escribir
+ */
+public void writeTag(Tag tag, NdefMessage message) {
+    if (tag != null) {
+        try {
+            Ndef ndefTag = Ndef.get(tag);
+            //ndefTag.isWritable() -> Para explicar
+            //ndefTag.makeReadOnly() -> Para explicar
+
+            if (ndefTag == null) {
+                // Se trataraá de escribir en NDEF format
+                NdefFormatable nForm = NdefFormatable.get(tag);
+                if (nForm != null) {
+                    nForm.connect();
+                    nForm.format(message);
+                    nForm.close();
+                }
+            } else {
+                ndefTag.connect();
+                ndefTag.writeNdefMessage(message);
+                ndefTag.close();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+
+********************************
+MainActivity.class
+********************************
+//Step 10: Adicionamos las variables de NFC en Main activity
+//NFC
+private NFCManager mNfcManager;
+private NdefMessage message = null;
+private ProgressDialog dialog;
+private Tag currentTag;
+
+
+//Step 11: Inicializamos la variable mNfcManager
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+    mContext = this;
+
+
+    mNfcManager = new NFCManager(this);
+    ...
+
+
+//Step 12: Adicionamos las 2 funciones de ciclo de vida de la App
+@Override
+protected void onResume() {
+    super.onResume();
+}
+
+@Override
+protected void onPause() {
+    super.onPause();
+    mNfcManager.disableDispatch();
+}
+
+
+//Step 13: Cambiamos el metodo readTag por registerToReceiveTags
+@Override
+public void onClick(View v) {
+    switch (v.getId()) {
+        case R.id.writeNfcImageButton:
+            writeTag();
+            break;
+        case R.id.readNfcImageButton:
+            registerToReceiveTags();
+           ...
+
+
+// Step 14: Escuchamos los Tags NFC
+
+/**
+ * Método que inicializa las lecturas NFC
+ */
+private void registerToReceiveTags() {
+    try {
+        mNfcManager.verifyNFC();
+
+        Intent nfcIntent = new Intent(this, getClass());
+        nfcIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0,
+                nfcIntent, 0);
+        IntentFilter[] intentFiltersArray = new IntentFilter[]{};
+        String[][] techList = new String[][]{
+                {android.nfc.tech.Ndef.class.getName()},
+                {android.nfc.tech.NdefFormatable.class.getName()}
+        };
+
+        mNfcManager.getmNfcAdapter().enableForegroundDispatch(this, pendingIntent, intentFiltersArray, techList);
+    } catch (NFCManager.NFCNotSupported nfcnsup) {
+        Toast.makeText(mContext, "NFC not supported", Toast.LENGTH_LONG).show();
+    } catch (NFCManager.NFCNotEnabled nfcnEn) {
+        Toast.makeText(mContext, "NFC Not enabled", Toast.LENGTH_LONG).show();
+    }
+}
+
+
+//Step 15: Sobreescribimos el método onNewIntent para recibir datos del SO
+@Override
+public void onNewIntent(Intent intent) {
+    Log.d(LOG, "New intent");
+    currentTag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
+    if (message != null) {
+        //Escritura
+        mNfcManager.writeTag(currentTag, message);
+        dialog.dismiss();
+        Toast.makeText(mContext, "Tag written", Toast.LENGTH_LONG).show();
+        message = null;
+    } else {
+        // Lectura
+        readTag(intent);
+    }
+}
+
+//Step 16: Adicionamos el método de escritura
+private void writeTag() {
+    String data = dataEditText.getText().toString().trim();
+    if (!data.isEmpty()) {
+        registerToReceiveTags();
+
+        message = mNfcManager.createTextMessage(data);
+        if (message != null) {
+            dialog = new ProgressDialog(MainActivity.this);
+            dialog.setMessage("Tag NFC Tag please");
+            dialog.show();
+            dataEditText.setText("");
+        }
+    }
+}
+
+
+ //Step 17: Adicionamos/cambiamos la función de lectura
+private void readTag(Intent intent) {
+    dataEditText.setEnabled(false);
+    if ((NfcAdapter.ACTION_TAG_DISCOVERED.equals(intent.getAction())
+            || NfcAdapter.ACTION_TECH_DISCOVERED.equals(intent.getAction()))) {
+        Parcelable[] rawMessages = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
+        if (rawMessages != null) {
+            NdefMessage message = (NdefMessage) rawMessages[0];
+            String data = new String(message.getRecords()[0].getPayload());
+            dataEditText.setText(data);
+
+            //Get more details
+            processTag(intent);
+        }
+    }
+}
+
+
+//Step 18: Obtenemos más detalles del chip
+public static void processTag(Intent intent) {
+    Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
+    String[] techList = tag.getTechList();
+    for (String itemTechList : techList) {
+        if (itemTechList.equals(MifareClassic.class.getName())) {
+            MifareClassic mifareClassicTag = MifareClassic.get(tag);
+            switch (mifareClassicTag.getType()) {
+                case MifareClassic.TYPE_CLASSIC:
+                    Log.d(LOG, "MifareClassic.TYPE_CLASSIC");
+                    break;
+                case MifareClassic.TYPE_PLUS:
+                    Log.d(LOG, "MifareClassic.TYPE_PLUS");
+                    break;
+                case MifareClassic.TYPE_PRO:
+                    Log.d(LOG, "MifareClassic.TYPE_PRO");
+                    break;
+            }
+        } else if (itemTechList.equals(MifareUltralight.class.getName())) {
+            //For Mifare Ultralight
+            MifareUltralight mifareUlTag = MifareUltralight.get(tag);
+            Log.e("mirafareultralight", mifareUlTag.toString());
+            switch (mifareUlTag.getType()) {
+                case MifareUltralight.TYPE_ULTRALIGHT:
+                    Log.d(LOG, "MifareUltralight.TYPE_ULTRALIGHT");
+                    break;
+                case MifareUltralight.TYPE_ULTRALIGHT_C:
+                    Log.d(LOG, "MifareUltralight.TYPE_ULTRALIGHT_C");
+                    break;
+            }
+        } else if (itemTechList.equals(IsoDep.class.getName())) {
+            // info[1] = "IsoDep";
+            IsoDep isoDepTag = IsoDep.get(tag);
+            Log.d(LOG, "IsoDep");
+
+        } else if (itemTechList.equals(Ndef.class.getName())) {
+            Ndef.get(tag);
+            Log.d(LOG, "Ndef");
+
+        } else if (itemTechList.equals(NdefFormatable.class.getName())) {
+            NdefFormatable ndefFormatableTag = NdefFormatable.get(tag);
+            Log.d(LOG, "NdefFormatable");
+
+        }
+    }
+
+}
