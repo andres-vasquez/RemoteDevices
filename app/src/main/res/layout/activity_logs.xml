@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="@dimen/space_md"
+    tools:context="io.github.andres_vasquez.remotedevicesexample.ui.LogsActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <EditText
+            android:id="@+id/dataEditText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.5"
+            android:hint="@string/hint_value"
+            android:lines="2" />
+
+        <ImageButton
+            android:id="@+id/sendImageButton"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginEnd="@dimen/space_xs"
+            android:layout_marginStart="@dimen/space_xs"
+            android:layout_weight="0.15"
+            android:background="@color/colorPrimary"
+            android:src="@drawable/ic_send_white_24dp" />
+
+        <ImageButton
+            android:id="@+id/advertiseImageButton"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginEnd="@dimen/space_xs"
+            android:layout_marginStart="@dimen/space_xs"
+            android:layout_weight="0.15"
+            android:background="@color/colorPrimary"
+            android:src="@drawable/ic_bluetooth_searching_white_24dp" />
+
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_lg"
+        android:gravity="center"
+        android:text="@string/logs"
+        android:textColor="@color/colorPrimaryDark"
+        android:textSize="@dimen/text_xxl" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="@dimen/space_lg">
+
+        <TextView
+            android:id="@+id/logsTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+    </ScrollView>
+</LinearLayout>

@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">Remote Devices Example</string>
+
+    <!-- Main Activity -->
+    <string name="hint_text">Insert the text to write inside the NFC</string>
+    <string name="BLE_devices">BLE devices list</string>
+    <string name="show_ble_options">Show BLE options without device</string>
+
+    <!-- Logs Activity -->
+    <string name="hint_value">Value to send to the function</string>
+    <string name="logs">Logs of data from BLE</string>
+</resources>

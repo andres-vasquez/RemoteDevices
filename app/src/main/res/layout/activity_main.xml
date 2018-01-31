@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="@dimen/space_md"
+    tools:context="io.github.andres_vasquez.remotedevicesexample.ui.MainActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <EditText
+            android:id="@+id/dataEditText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.7"
+            android:hint="@string/hint_text"
+            android:lines="2" />
+
+        <ImageButton
+            android:id="@+id/writeNfcImageButton"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginEnd="@dimen/space_xs"
+            android:layout_marginStart="@dimen/space_xs"
+            android:layout_weight="0.15"
+            android:background="@color/colorPrimary"
+            android:src="@drawable/ic_save_white_24dp" />
+
+        <ImageButton
+            android:id="@+id/readNfcImageButton"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginEnd="@dimen/space_xs"
+            android:layout_marginStart="@dimen/space_xs"
+            android:layout_weight="0.15"
+            android:background="@color/colorPrimary"
+            android:src="@drawable/ic_file_download_white_24dp" />
+
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_lg"
+        android:gravity="center"
+        android:text="@string/BLE_devices"
+        android:textColor="@color/colorPrimaryDark"
+        android:textSize="@dimen/text_xxxl" />
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <Button
+            android:id="@+id/bleOptionsButton"
+            style="@style/Base.TextAppearance.AppCompat.Widget.Button.Colored"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:text="@string/show_ble_options" />
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/bleDevicesRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_above="@+id/bleOptionsButton"
+            android:layout_marginTop="@dimen/space_lg"
+            android:padding="@dimen/space_lg">
+
+        </android.support.v7.widget.RecyclerView>
+    </RelativeLayout>
+</LinearLayout>
