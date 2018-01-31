@@ -1,3 +1,4 @@
+<!-- Step 2: Creamos la lista de NFC soportados -->
 <resources>
     <tech-list>
         <tech>android.nfc.tech.NdefFormatable</tech>

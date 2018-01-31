@@ -2,10 +2,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="io.github.andres_vasquez.remotedevicesexample">
 
-    <uses-permission android:name="android.permission.NFC" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+
+    <!-- Step 1: Adicionamos los permisos al Manifest -->
+    <uses-permission android:name="android.permission.NFC" />
+    <uses-feature android:name="android.hardware.nfc" android:required="true" />
 
     <application
         android:allowBackup="true"
@@ -14,7 +17,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity
+        <mActivity
             android:name=".ui.MainActivity"
             android:screenOrientation="portrait">
             <intent-filter>
@@ -22,13 +25,14 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
+        </mActivity>
 
-        <activity
+        <mActivity
             android:name=".ui.LogsActivity"
             android:screenOrientation="portrait"
             android:parentActivityName=".ui.MainActivity"/>
 
+        <!-- Step 3: Adicionamos la metadata de chips NFC soportados -->
         <meta-data
             android:name="android.nfc.action.TECH_DISCOVERED"
             android:resource="@xml/nfc_tech_list" />
