@@ -1,0 +1,485 @@
+********************************
+AndroidManifest.xml
+********************************
+<!--Step I: Adicionamos los permisos-->
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
+    <uses-feature
+        android:name="android.hardware.bluetooth_le"
+        android:required="true"/>
+
+
+********************************
+models/BLEDevice
+********************************
+//Step II: Cambiamos el modelo
+public class BLEDevice {
+
+    private String name;
+
+    private String address;
+
+    private int rssi;
+
+    private long timestamp;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public int getRssi() {
+        return rssi;
+    }
+
+    public void setRssi(int rssi) {
+        this.rssi = rssi;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
+}
+
+********************************
+models/
+********************************
+//Step III: Createmos el interface para las respuestas de conexion
+public interface OnBLEDiscoveryEventsListener {
+    //Discovery
+    void onDeviceFound(BLEDevice device);
+    void onDeviceUpdate(BLEDevice device);
+}
+
+//Step IV: Createmos el interface para las respuestas de eventos
+public interface OnBLEEventsListener {
+
+    //Write
+    void onWriteSuccess();
+
+    //Read
+    void onReadResponse(BluetoothGattCharacteristic characteristic);
+}
+
+
+********************************
+adapters/BLEAdapter
+********************************
+//Step V: Cambiamos las variables de BleAdapter
+    private ArrayList<BLEDevice> data;
+    // Map of objects key=address, value=position
+    private Map<String, Integer> mapData;
+
+    private Context context;
+    private OnBLEClickListener onBLEClickListener;
+
+    public BleAdapter(Context context) {
+        data = new ArrayList<BLEDevice>();
+        mapData = new HashMap<>();
+        this.context = context;
+    }
+
+NOTA: refactor (rename) datos por data.
+
+//Step VI: Adicionamos los metodos addItem y updateItem
+    public void addItem(BLEDevice device) {
+        mapData.put(device.getAddress(),data.size());
+        data.add(device);
+        notifyDataSetChanged();
+    }
+
+    public void updateItem(BLEDevice device) {
+        if(mapData.containsKey(device.getAddress())){
+            int position = mapData.get(device.getAddress());
+            if(!data.isEmpty() && position<data.size()){
+                data.get(position).setRssi(device.getRssi());
+                data.get(position).setTimestamp(device.getTimestamp());
+                notifyDataSetChanged();
+            }
+        }
+    }
+
+
+********************************
+utils/constants
+********************************
+ //Step VII: Modificamos las constantes
+public class Constants {
+    public static final String EXTRA_BLE = "bleSelected";
+
+    public static final ParcelUuid EDDYSTONE_SERVICE_UUID =
+            ParcelUuid.fromString("0000FEAA-0000-1000-8000-00805F9B34FB");
+
+
+    public static final ScanSettings SCAN_SETTINGS =
+            new ScanSettings.Builder()
+                    .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+                    .setReportDelay(0)
+                    .build();
+}
+
+
+********************************
+controller/BLEManager
+********************************
+//Step IX: Creamos la clase BLEManager y sus variables globales
+public class BLEManager {
+
+    private static final String LOG = BLEManager.class.getSimpleName();
+
+    private Application mApplication;
+    private static BLEManager INSTANCE;
+
+    private OnBLEDiscoveryEventsListener mDiscoveryCallback;
+    private OnBLEEventsListener mEventsCallback;
+
+    private BluetoothManager mBluetoothManager;
+    private BluetoothAdapter mBluetoothAdapter;
+    private BluetoothGatt mBluetoothGatt;
+
+    //Map of devices: key=address, value=obj
+    private Map<String, BLEDevice> mapDevices = new ConcurrentHashMap<>();
+
+    private BluetoothLeScanner mScanner;
+    private List<ScanFilter> scanFilters;
+    private ScanCallback scanCallback;
+
+    //Connection state
+    private int mConnectionState = STATE_DISCONNECTED;
+    private static final int STATE_DISCONNECTED = 0;
+    private static final int STATE_CONNECTING = 1;
+    private static final int STATE_CONNECTED = 2;
+
+    public BLEManager(Application mApplication) {
+        this.mApplication = mApplication;
+    }
+
+    public static BLEManager getInstance(Application app) {
+        if (INSTANCE == null) {
+            INSTANCE = new BLEManager(app);
+        }
+        return INSTANCE;
+    }
+
+
+//Step X: Adicionamos los getter y setters
+    public BluetoothAdapter getmBluetoothAdapter() {
+        return mBluetoothAdapter;
+    }
+
+    public BluetoothGattService getGateService() {
+        if (mBluetoothGatt == null) return null;
+
+        return mBluetoothGatt.getService(UUID.fromString("00000100-6b72-6170-2065-757173697571"));
+    }
+
+    public void setmDiscoveryCallback(OnBLEDiscoveryEventsListener mDiscoveryCallback) {
+        this.mDiscoveryCallback = mDiscoveryCallback;
+    }
+
+    public void setmEventsCallback(OnBLEEventsListener mEventsCallback) {
+        this.mEventsCallback = mEventsCallback;
+    }
+
+
+
+//Step XI: Creamos las excepciones custom
+public static class BluetoothNotSupported extends Exception {
+
+    public BluetoothNotSupported() {
+        super();
+    }
+}
+
+/**
+ * Excepcion custom
+ */
+public static class BlueetoothAdapterNotAvailable extends Exception {
+    public BlueetoothAdapterNotAvailable() {
+        super();
+    }
+}
+
+
+
+//Step XII: Verificamos el soporte BLE
+public void verifyBLE() throws BlueetoothAdapterNotAvailable, BluetoothNotSupported {
+
+    if (mBluetoothManager == null) {
+        mBluetoothManager = (BluetoothManager) mApplication.getSystemService(Context.BLUETOOTH_SERVICE);
+        if (mBluetoothManager == null) {
+            throw new BLEManager.BluetoothNotSupported();
+        }
+    }
+
+    mBluetoothAdapter = mBluetoothManager.getAdapter();
+    if (mBluetoothAdapter == null) {
+        throw new BlueetoothAdapterNotAvailable();
+    }
+
+    mScanner = mBluetoothAdapter.getBluetoothLeScanner();
+    scanFilters = new ArrayList<>();
+    //scanFilters.add(new ScanFilter.Builder().setServiceUuid(Constants.EDDYSTONE_SERVICE_UUID).build());
+}
+
+
+ //Step XIII: Buscamos dispositivos
+public void initDiscovery() {
+    if (mScanner == null) {
+        return;
+    }
+
+    scanCallback = new ScanCallback() {
+        @Override
+        public void onScanResult(int callbackType, ScanResult result) {
+            ScanRecord scanRecord = result.getScanRecord();
+            if (scanRecord == null) {
+                return;
+            }
+
+            BluetoothDevice bluetoothDevice = result.getDevice();
+            if (bluetoothDevice != null) {
+                String deviceAddress = result.getDevice().getAddress();
+                BLEDevice bleDevice;
+
+                if (!mapDevices.containsKey(deviceAddress)) {
+                    bleDevice = new BLEDevice();
+                    bleDevice.setName(result.getDevice().getName());
+                    bleDevice.setAddress(deviceAddress);
+                    bleDevice.setRssi(result.getRssi());
+                    bleDevice.setTimestamp(System.currentTimeMillis());
+
+                    mapDevices.put(deviceAddress, bleDevice);
+
+                    //Send new device to the list
+                    if (mDiscoveryCallback != null) {
+                        mDiscoveryCallback.onDeviceFound(bleDevice);
+                    }
+                } else {
+                    mapDevices.get(deviceAddress).setTimestamp(System.currentTimeMillis());
+                    mapDevices.get(deviceAddress).setRssi(result.getRssi());
+
+                    //Update device in the list
+                    if (mDiscoveryCallback != null) {
+                        mDiscoveryCallback.onDeviceUpdate(mapDevices.get(deviceAddress));
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void onScanFailed(int errorCode) {
+            switch (errorCode) {
+                case SCAN_FAILED_ALREADY_STARTED:
+                    break;
+                case SCAN_FAILED_APPLICATION_REGISTRATION_FAILED:
+                    break;
+                case SCAN_FAILED_FEATURE_UNSUPPORTED:
+                    break;
+                case SCAN_FAILED_INTERNAL_ERROR:
+                    break;
+                default:
+                    break;
+            }
+        }
+    };
+
+    mScanner.startScan(scanFilters, Constants.SCAN_SETTINGS, scanCallback);
+    Log.d(LOG, "Start BLE scanning");
+}
+
+ //Step XIV: Detenemos la busqueda
+public void stopDiscovery() {
+    if (mScanner != null) {
+        mScanner.stopScan(scanCallback);
+        Log.d(LOG, "Stop BLE scanning");
+    }
+}
+
+
+    //Step XV: Agregamos el metodo de conexion y desconexion
+public boolean connect(final String address) throws BlueetoothAdapterNotAvailable {
+    if (mBluetoothAdapter == null || address == null) {
+        throw new BlueetoothAdapterNotAvailable();
+    }
+
+    final BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
+    if (device == null) {
+        Log.w(LOG, "Device not found.  Unable to connect.");
+        return false;
+    }
+
+    mBluetoothGatt = device.connectGatt(mApplication, false, mGattCallback);
+    Log.d(LOG, "Trying to create a new connection.");
+    mConnectionState = STATE_CONNECTING;
+    return true;
+}
+
+public void disconnect() {
+    if (mBluetoothAdapter == null || mBluetoothGatt == null) {
+        Log.w(LOG, "BluetoothAdapter not initialized");
+        return;
+    }
+    mBluetoothGatt.disconnect();
+}
+
+//Step XVI: Metodo para cerrar el enlace BLE
+    public void close() {
+        if (mBluetoothGatt == null) {
+            return;
+        }
+        mBluetoothGatt.close();
+        mBluetoothGatt = null;
+    }
+
+    //Step XVII: Callback de GATT
+    private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
+        @Override
+        public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+            if (newState == BluetoothProfile.STATE_CONNECTED) {
+                mConnectionState = STATE_CONNECTED;
+                Log.i(LOG, "Connected to GATT server.");
+
+                // Una vez conectado buscar los servicios
+                Log.i(LOG, "Attempting to start service discovery:" +
+                        mBluetoothGatt.discoverServices());
+
+            } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                mConnectionState = STATE_DISCONNECTED;
+                Log.i(LOG, "Disconnected from GATT server.");
+            }
+        }
+
+        @Override
+        public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+            Log.d(LOG, "onServicesDiscovered received: " + status);
+        }
+
+        @Override
+        public void onCharacteristicRead(BluetoothGatt gatt,
+                                         BluetoothGattCharacteristic characteristic,
+                                         int status) {
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                if (mEventsCallback != null) {
+                    mEventsCallback.onReadResponse(characteristic);
+                }
+            }
+        }
+
+        @Override
+        public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+            super.onCharacteristicWrite(gatt, characteristic, status);
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                if (mEventsCallback != null) {
+                    mEventsCallback.onWriteSuccess();
+                }
+            }
+        }
+
+        @Override
+        public void onCharacteristicChanged(BluetoothGatt gatt,
+                                            BluetoothGattCharacteristic characteristic) {
+            Log.i(LOG, "Characteristic changed.");
+        }
+    };
+
+
+
+    //Step XVIII: Agregamos el metodo de lectura y escritura
+    public void readCharacteristic(BluetoothGattCharacteristic characteristic) {
+        if (mBluetoothAdapter == null || mBluetoothGatt == null) {
+            Log.w(LOG, "GATT not initializaed");
+            return;
+        }
+        mBluetoothGatt.readCharacteristic(characteristic);
+    }
+
+    public void writeCharacteristic(BluetoothGattCharacteristic characteristic) {
+        if (mBluetoothGatt == null) {
+            Log.w(LOG, "GATT not initializaed");
+            return;
+        }
+        mBluetoothGatt.writeCharacteristic(characteristic);
+    }
+
+
+********************************
+MainActivity.xml
+********************************
+//Step XX: Adicionamos las variables
+//Blue
+private BLEManager mBleManager;
+
+
+//Step XXI: Iniciamos la clase y su listener
+    mBleManager = BLEManager.getInstance(getApplication());
+    mBleManager.setmDiscoveryCallback(this);
+
+
+//Step XXII: Implementamos la interface y sus metodos
+public class MainActivity extends AppCompatActivity implements View.OnClickListener,
+        OnBLEClickListener,
+        OnBLEDiscoveryEventsListener{
+        ...
+
+
+          @Override
+    public void onDeviceFound(final BLEDevice device) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mBleAdapter.addItem(device);
+            }
+        });
+    }
+
+    @Override
+    public void onDeviceUpdate(final BLEDevice device) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mBleAdapter.updateItem(device);
+            }
+        });
+    }
+
+
+    //Step XXIII: Iniciamos/paramos la busqueda BLE
+    @Override
+    protected void onResume() {
+        super.onResume();
+        //Llenamos la lista de BLE devices
+        try
+        {
+            mBleManager.verifyBLE();
+            mBleManager.initDiscovery();
+        }catch (BLEManager.BluetoothNotSupported ex) {
+            Toast.makeText(mContext, "BLE not supported", Toast.LENGTH_LONG).show();
+        } catch (BLEManager.BlueetoothAdapterNotAvailable ex) {
+            Toast.makeText(mContext, "BLE adapter not available", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mNfcManager.disableDispatch();
+        mBleManager.stopDiscovery();
+    }
