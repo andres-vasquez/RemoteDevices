@@ -5,6 +5,7 @@
     <string name="hint_text">Insert the text to write inside the NFC</string>
     <string name="BLE_devices">BLE devices list</string>
     <string name="show_ble_options">Show BLE options without device</string>
+    <string name="rssi_label">Rssi: </string>
 
     <!-- Logs Activity -->
     <string name="hint_value">Value to send to the function</string>

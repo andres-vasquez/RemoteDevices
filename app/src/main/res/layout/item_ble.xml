@@ -4,46 +4,71 @@
     android:id="@+id/containerLinearLayout"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="@dimen/space_xs">
+    android:orientation="horizontal"
+    android:padding="@dimen/space_md">
 
-    <TextView
-        android:id="@+id/nameTextView"
-        android:layout_width="match_parent"
+    <ImageView
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:textSize="@dimen/text_xxl"
-        android:textColor="@color/colorPrimaryDark"
-        android:textStyle="bold"
-        tools:text="Device name"/>
-
-    <TextView
-        android:id="@+id/addressTextView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textSize="@dimen/text_xxl"
-        tools:text="00:00:00:00:00"/>
+        android:layout_weight="2"
+        android:src="@drawable/ic_bluetooth_black_24dp"
+        android:clickable="false"
+        android:padding="@dimen/space_xs"/>
 
     <LinearLayout
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:layout_weight="8"
+        android:orientation="vertical">
 
         <TextView
-            android:layout_width="wrap_content"
+            android:id="@+id/nameTextView"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="@dimen/text_xxl"
-            tools:text="Rssi: "/>
-
-        <TextView
-            android:id="@+id/rssiTextView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="@dimen/text_xxl"
             android:textColor="@color/colorPrimaryDark"
-            android:textStyle="bold|italic"
-            android:layout_marginStart="@dimen/space_lg"
-            android:layout_marginEnd="@dimen/space_lg"
-            tools:text="90dbm"/>
+            android:textSize="@dimen/text_xxl"
+            android:textStyle="bold"
+            android:clickable="false"
+            tools:text="Device name" />
 
+        <TextView
+            android:id="@+id/addressTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/text_xl"
+            android:clickable="false"
+            tools:text="00:00:00:00:00" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/text_xl"
+                android:clickable="false"
+                android:text="@string/rssi_label" />
+
+            <TextView
+                android:id="@+id/rssiTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="@dimen/space_lg"
+                android:layout_marginStart="@dimen/space_lg"
+                android:textColor="@color/colorPrimaryDark"
+                android:textSize="@dimen/text_xl"
+                android:clickable="false"
+                android:textStyle="bold|italic"
+                tools:text="90dbm" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1px"
+            android:background="@color/colorGray"
+            android:layout_marginTop="@dimen/space_xs"
+            android:layout_marginBottom="@dimen/space_xs"/>
     </LinearLayout>
 </LinearLayout>

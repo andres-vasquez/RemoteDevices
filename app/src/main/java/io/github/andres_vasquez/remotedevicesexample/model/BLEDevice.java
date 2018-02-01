@@ -4,6 +4,7 @@ package io.github.andres_vasquez.remotedevicesexample.model;
  * Created by andresvasquez on 1/30/18.
  */
 
+//Step II: Cambiamos el modelo
 public class BLEDevice {
 
     private String name;
@@ -11,6 +12,8 @@ public class BLEDevice {
     private String address;
 
     private int rssi;
+
+    private long timestamp;
 
     public String getName() {
         return name;
@@ -34,5 +37,13 @@ public class BLEDevice {
 
     public void setRssi(int rssi) {
         this.rssi = rssi;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
     }
 }

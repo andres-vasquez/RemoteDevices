@@ -2,6 +2,7 @@ package io.github.andres_vasquez.remotedevicesexample.ui;
 
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
+import android.bluetooth.BluetoothGattCharacteristic;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -31,13 +32,18 @@ import java.util.List;
 
 import io.github.andres_vasquez.remotedevicesexample.R;
 import io.github.andres_vasquez.remotedevicesexample.adapters.BleAdapter;
+import io.github.andres_vasquez.remotedevicesexample.controller.BLEManager;
 import io.github.andres_vasquez.remotedevicesexample.controller.NFCManager;
 import io.github.andres_vasquez.remotedevicesexample.model.BLEDevice;
 import io.github.andres_vasquez.remotedevicesexample.model.interfaces.OnBLEClickListener;
+import io.github.andres_vasquez.remotedevicesexample.model.interfaces.OnBLEDiscoveryEventsListener;
+import io.github.andres_vasquez.remotedevicesexample.model.interfaces.OnBLEEventsListener;
 import io.github.andres_vasquez.remotedevicesexample.utils.Constants;
 
+//Step XXII: Implementamos la interface y sus metodos
 public class MainActivity extends AppCompatActivity implements View.OnClickListener,
-        OnBLEClickListener {
+        OnBLEClickListener,
+        OnBLEDiscoveryEventsListener{
 
     private static final String LOG = MainActivity.class.getSimpleName();
     private Context mContext;
@@ -61,6 +67,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private ProgressDialog dialog;
     private Tag currentTag;
 
+    //Step XX: Adicionamos las variables
+    //Blue
+    private BLEManager mBleManager;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -69,6 +79,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         //Step 11: Inicializamos la variable mNfcManager
         mNfcManager = new NFCManager(this);
+
+        //Step XXI: Iniciamos la clase y su listener
+        mBleManager = BLEManager.getInstance(getApplication());
+        mBleManager.setmDiscoveryCallback(this);
 
         initUI();
         initBleList();
@@ -90,15 +104,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     //Step 12: Adicionamos las 2 funciones de ciclo de vida de la App
+    //Step XXIII: Iniciamos/paramos la busqueda BLE
     @Override
     protected void onResume() {
         super.onResume();
+        //Llenamos la lista de BLE devices
+        try
+        {
+            mBleManager.verifyBLE();
+            mBleManager.initDiscovery();
+        }catch (BLEManager.BluetoothNotSupported ex) {
+            Toast.makeText(mContext, "BLE not supported", Toast.LENGTH_LONG).show();
+        } catch (BLEManager.BlueetoothAdapterNotAvailable ex) {
+            Toast.makeText(mContext, "BLE adapter not available", Toast.LENGTH_LONG).show();
+        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         mNfcManager.disableDispatch();
+        mBleManager.stopDiscovery();
     }
 
     private void initUI() {
@@ -269,8 +295,29 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onDeviceClick(BLEDevice device) {
+        mBleManager.stopDiscovery();
         Intent logsActivityIntent = new Intent(mContext, LogsActivity.class);
         logsActivityIntent.putExtra(Constants.EXTRA_BLE, device.getAddress());
         startActivity(logsActivityIntent);
+    }
+
+    @Override
+    public void onDeviceFound(final BLEDevice device) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mBleAdapter.addItem(device);
+            }
+        });
+    }
+
+    @Override
+    public void onDeviceUpdate(final BLEDevice device) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mBleAdapter.updateItem(device);
+            }
+        });
     }
 }

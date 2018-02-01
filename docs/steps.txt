@@ -42,15 +42,15 @@ controller/NFCManager.class
 // Step 4: Creamos NFCManager con su constructor activity y el getter para adapter
 public class NFCManager {
 
-    private Activity mActivity;
+    private Activity mApplication;
     private NfcAdapter mNfcAdapter;
 
     /**
      * Constructor del NFC Manager
-     * @param mActivity activity
+     * @param mApplication activity
      */
-    public NFCManager(Activity mActivity) {
-        this.mActivity = mActivity;
+    public NFCManager(Activity mApplication) {
+        this.mApplication = mApplication;
     }
 
 
@@ -91,7 +91,7 @@ public static class NFCNotEnabled extends Exception {
  */
 public void verifyNFC() throws NFCNotSupported, NFCNotEnabled {
 
-    mNfcAdapter = NfcAdapter.getDefaultAdapter(mActivity);
+    mNfcAdapter = NfcAdapter.getDefaultAdapter(mApplication);
 
     if (mNfcAdapter == null)
         throw new NFCNotSupported();
@@ -107,7 +107,7 @@ public void verifyNFC() throws NFCNotSupported, NFCNotEnabled {
  */
 public void disableDispatch() {
     if (mNfcAdapter != null) {
-        mNfcAdapter.disableForegroundDispatch(mActivity);
+        mNfcAdapter.disableForegroundDispatch(mApplication);
     }
 }
 

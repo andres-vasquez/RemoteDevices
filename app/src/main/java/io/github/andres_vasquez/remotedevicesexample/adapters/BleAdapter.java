@@ -5,7 +5,10 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import io.github.andres_vasquez.remotedevicesexample.R;
 import io.github.andres_vasquez.remotedevicesexample.model.BLEDevice;
@@ -17,13 +20,18 @@ import io.github.andres_vasquez.remotedevicesexample.ui.viewholder.BleViewHolder
  */
 
 public class BleAdapter extends RecyclerView.Adapter<BleViewHolder> {
-    private ArrayList<BLEDevice> datos;
-    private Context context;
 
+    //Step V: Cambiamos las variables de BleAdapter
+    private ArrayList<BLEDevice> data;
+    // Map of objects key=address, value=position
+    private Map<String, Integer> mapData;
+
+    private Context context;
     private OnBLEClickListener onBLEClickListener;
 
     public BleAdapter(Context context) {
-        datos = new ArrayList<BLEDevice>();
+        data = new ArrayList<BLEDevice>();
+        mapData = new HashMap<>();
         this.context = context;
     }
 
@@ -35,14 +43,14 @@ public class BleAdapter extends RecyclerView.Adapter<BleViewHolder> {
 
     @Override
     public void onBindViewHolder(BleViewHolder holder, int position) {
-        final BLEDevice c = datos.get(position);
+        final BLEDevice c = data.get(position);
         holder.nameTextView.setText(c.getName());
         holder.addressTextView.setText(c.getAddress());
         holder.rssiTextView.setText(String.valueOf(c.getRssi()));
         holder.containerLinearLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(onBLEClickListener !=null){
+                if (onBLEClickListener != null) {
                     onBLEClickListener.onDeviceClick(c);
                 }
             }
@@ -51,16 +59,35 @@ public class BleAdapter extends RecyclerView.Adapter<BleViewHolder> {
 
     @Override
     public int getItemCount() {
-        return datos.size();
+        return data.size();
+    }
+
+
+    //Step VI: Adicionamos los metodos addItem y updateItem
+    public void addItem(BLEDevice device) {
+        mapData.put(device.getAddress(),data.size());
+        data.add(device);
+        notifyDataSetChanged();
+    }
+
+    public void updateItem(BLEDevice device) {
+        if(mapData.containsKey(device.getAddress())){
+            int position = mapData.get(device.getAddress());
+            if(!data.isEmpty() && position<data.size()){
+                data.get(position).setRssi(device.getRssi());
+                data.get(position).setTimestamp(device.getTimestamp());
+                notifyDataSetChanged();
+            }
+        }
     }
 
     public void swapData(ArrayList<BLEDevice> datos) {
-        this.datos = datos;
+        this.data = datos;
         notifyDataSetChanged();
     }
 
     public void clear() {
-        datos.clear();
+        data.clear();
         notifyDataSetChanged();
     }
 

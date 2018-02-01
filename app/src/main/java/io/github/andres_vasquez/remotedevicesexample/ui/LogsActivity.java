@@ -11,6 +11,8 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 
 import io.github.andres_vasquez.remotedevicesexample.R;
+import io.github.andres_vasquez.remotedevicesexample.controller.BLEManager;
+import io.github.andres_vasquez.remotedevicesexample.controller.NFCManager;
 import io.github.andres_vasquez.remotedevicesexample.utils.Constants;
 
 public class LogsActivity extends AppCompatActivity implements View.OnClickListener{
@@ -24,12 +26,15 @@ public class LogsActivity extends AppCompatActivity implements View.OnClickListe
     private TextView logsTextView;
 
     private String address;
+    private BLEManager mBleManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_logs);
         mContext = this;
+        mBleManager = BLEManager.getInstance(getApplication());
+
 
         initUI();
         sendImageButton.setOnClickListener(this);
@@ -75,6 +80,7 @@ public class LogsActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void startAdvertisingService() {
+
     }
 
     private void sendData() {
